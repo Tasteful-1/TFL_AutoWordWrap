@@ -4,7 +4,8 @@
  * Automatically wraps text at word boundaries when text exceeds screen width.
  * Automatically merges wrapped text with subsequent \n lines to prevent excessive line breaks.
  * Works with 401 code text display regardless of portrait presence.
-
+ * You can optionally set the maxWidth parameter to specify the maximum pixel width before line wrapping (0 = auto).
+ 
 # RMMV
 
 ![image](https://github.com/user-attachments/assets/95f8cb11-4404-407c-a5a3-55841fc688db)
