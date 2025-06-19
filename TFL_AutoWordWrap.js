@@ -25,25 +25,6 @@
  *
  */
 
-/*:ja
- * @version 1.0.0
- * @author Tasteful-1
- * @url https://github.com/Tasteful-1
- * @help TFL_AutoWordWrap.js
- *
- * @plugindesc v1.0.0 自動単語折り返し
- *
- * テキストが画面幅を超えた時に単語境界で自動的に折り返します。
- * 401コードのテキスト表示に対応しています。
- *
- * @param maxWidth
- * @text 最大幅
- * @desc 改行する最大ピクセル幅 (0 = 自動)
- * @type number
- * @default 0
- *
- */
-
 /*:ko
  * @version 1.0.0
  * @author Tasteful-1
