@@ -1,22 +1,26 @@
 //=============================================================================
 // TFL_AutoWordWrap.js
-// ver1.0.0
+// ver1.0.1
 // Copyright (c) 2025 tasteful-1
 // This software is released under the MIT license.
 // http://opensource.org/licenses/mit-license.php
 //=============================================================================
-
+//
+// 1.0.1 (25-07-06) : Fixed compatibility issue with MessageAlignmentEC plugin.
+// 1.0.0 (25-06-19) : Release.
+//
+//=============================================================================
 /*:
- * @version 1.0.0
+ * @target MZ
+ * @version 1.0.1
  * @author Tasteful-1
  * @url https://github.com/Tasteful-1
  * @help TFL_AutoWordWrap.js
  *
- * @plugindesc v1.0.0 Auto Word Wrap
- *
  * Automatically wraps text at word boundaries when text exceeds screen width.
  * Works with 401 code text display.
  *
+ * @plugindesc v1.0.0 Auto Word Wrap
  * @param maxWidth
  * @text Max Width
  * @desc Maximum pixel width before line wrapping (0 = auto)
@@ -26,16 +30,16 @@
  */
 
 /*:ko
- * @version 1.0.0
+ * @target MZ
+ * @version 1.0.1
  * @author Tasteful-1
  * @url https://github.com/Tasteful-1
  * @help TFL_AutoWordWrap.js
  *
- * @plugindesc v1.0.0 자동 단어 줄바꿈
- *
  * 텍스트가 화면 너비를 초과할 때 단어 경계에서 자동으로 줄바꿈합니다.
  * 401 코드 텍스트 표시에 대응합니다.
  *
+ * @plugindesc v1.0.0 자동 단어 줄바꿈
  * @param maxWidth
  * @text 최대 너비
  * @desc 줄바꿈할 최대 픽셀 너비 (0 = 자동)
@@ -50,45 +54,49 @@
     const parameters = PluginManager.parameters(pluginName);
     const maxWidth = parseInt(parameters['maxWidth']) || 0;
 
-    // Override convertEscapeCharacters to apply word wrapping
-    const _Window_Message_convertEscapeCharacters = Window_Message.prototype.convertEscapeCharacters;
-    Window_Message.prototype.convertEscapeCharacters = function(text) {
-        text = _Window_Message_convertEscapeCharacters.call(this, text);
-        return this.applyWordWrap(text);
+    // Use processAllText instead of convertEscapeCharacters for MessageAlignmentEC compatibility
+    const _Window_Message_processAllText = Window_Message.prototype.processAllText;
+    Window_Message.prototype.processAllText = function(text) {
+        // Let MessageAlignmentEC process first
+        if (_Window_Message_processAllText) {
+            text = _Window_Message_processAllText.call(this, text);
+        }
+        
+        // Apply word wrap while preserving alignment control characters
+        return this.applyWordWrapWithAlignment(text);
     };
 
-    // Apply word wrapping to text
-    Window_Message.prototype.applyWordWrap = function(text) {
+    // Apply word wrap while considering alignment control characters
+    Window_Message.prototype.applyWordWrapWithAlignment = function(text) {
         const lines = text.split('\n');
         const allWrappedLines = [];
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-
+            
             if (line.trim() === '') {
                 allWrappedLines.push('');
+                continue;
+            }
+
+            // Extract alignment control characters
+            const alignmentMatch = line.match(/\\(LL|CL|RL)/i);
+            const alignmentCode = alignmentMatch ? alignmentMatch[0] : '';
+            
+            // Get clean text without alignment control characters
+            const cleanLine = line.replace(/\\(LL|CL|RL)/i, '');
+            
+            if (cleanLine.trim() === '') {
+                allWrappedLines.push(line); // Keep line with only alignment characters
             } else {
-                const wrapped = this.wrapLine(line);
-
-                // Merge wrapped text with next line when auto-wrapping occurs
-                if (wrapped.length > 1 && i + 1 < lines.length) {
-                    // Combine last wrapped part with next line
-                    const lastWrapped = wrapped.pop();
-                    const nextLine = lines[i + 1];
-
-                    // Add existing wrapped lines
-                    allWrappedLines.push(...wrapped);
-
-                    // Combine last part with next line
-                    const combinedLine = lastWrapped + (nextLine ? ' ' + nextLine : '');
-                    const reWrapped = this.wrapLine(combinedLine);
-                    allWrappedLines.push(...reWrapped);
-
-                    // Skip next line since it's already processed
-                    i++;
-                } else {
-                    allWrappedLines.push(...wrapped);
+                const wrapped = this.wrapLineWithAlignment(cleanLine, alignmentCode);
+                
+                // Add alignment control character only to the first line
+                if (wrapped.length > 0 && alignmentCode) {
+                    wrapped[0] = alignmentCode + wrapped[0];
                 }
+                
+                allWrappedLines.push(...wrapped);
             }
         }
 
@@ -115,8 +123,8 @@
         return Math.max(usableWidth, 200);
     };
 
-    // Wrap a single line at word boundaries
-    Window_Message.prototype.wrapLine = function(line) {
+    // Wrap a single line while considering alignment
+    Window_Message.prototype.wrapLineWithAlignment = function(line, alignmentCode) {
         if (!line || line.trim() === '') return [''];
 
         const availableWidth = this.getTextAreaWidth();
@@ -132,7 +140,12 @@
 
             let testWidth;
             try {
-                testWidth = this.textWidth(testLine);
+                // Use MessageAlignmentEC's textWidthEx method if available
+                if (this.textWidthEx) {
+                    testWidth = this.textWidthEx(testLine);
+                } else {
+                    testWidth = this.textWidth(testLine);
+                }
             } catch (e) {
                 testWidth = testLine.length * 24;
             }
