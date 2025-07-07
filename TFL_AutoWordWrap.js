@@ -1,18 +1,19 @@
 //=============================================================================
 // TFL_AutoWordWrap.js
-// ver1.0.1
+// ver1.0.2
 // Copyright (c) 2025 tasteful-1
 // This software is released under the MIT license.
 // http://opensource.org/licenses/mit-license.php
 //=============================================================================
 //
+// 1.0.2 (25-07-07) : Fixed compatibility issue with MessageAlignCenter plugin.
 // 1.0.1 (25-07-06) : Fixed compatibility issue with MessageAlignmentEC plugin.
 // 1.0.0 (25-06-19) : Release.
 //
 //=============================================================================
 /*:
  * @target MZ
- * @version 1.0.1
+ * @version 1.0.2
  * @author Tasteful-1
  * @url https://github.com/Tasteful-1
  * @help TFL_AutoWordWrap.js
@@ -57,23 +58,46 @@
     // Use processAllText instead of convertEscapeCharacters for MessageAlignmentEC compatibility
     const _Window_Message_processAllText = Window_Message.prototype.processAllText;
     Window_Message.prototype.processAllText = function(text) {
-        // Let MessageAlignmentEC process first
-        if (_Window_Message_processAllText) {
-            text = _Window_Message_processAllText.call(this, text);
+
+        if (text === undefined || text === null) {
+            text = '';
         }
-        
+
+        if (typeof text !== 'string') {
+            text = String(text);
+        }
+
+        let processedText = text;
+        if (_Window_Message_processAllText) {
+            try {
+                processedText = _Window_Message_processAllText.call(this, text);
+                if (processedText === undefined || processedText === null) {
+                    processedText = text;
+                }
+                if (typeof processedText !== 'string') {
+                    processedText = String(processedText);
+                }
+            } catch (e) {
+                processedText = text;
+            }
+        }
+
         // Apply word wrap while preserving alignment control characters
-        return this.applyWordWrapWithAlignment(text);
+        return this.applyWordWrapWithAlignment(processedText);
     };
 
     // Apply word wrap while considering alignment control characters
     Window_Message.prototype.applyWordWrapWithAlignment = function(text) {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
         const lines = text.split('\n');
         const allWrappedLines = [];
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            
+
             if (line.trim() === '') {
                 allWrappedLines.push('');
                 continue;
@@ -82,20 +106,20 @@
             // Extract alignment control characters
             const alignmentMatch = line.match(/\\(LL|CL|RL)/i);
             const alignmentCode = alignmentMatch ? alignmentMatch[0] : '';
-            
+
             // Get clean text without alignment control characters
             const cleanLine = line.replace(/\\(LL|CL|RL)/i, '');
-            
+
             if (cleanLine.trim() === '') {
                 allWrappedLines.push(line); // Keep line with only alignment characters
             } else {
                 const wrapped = this.wrapLineWithAlignment(cleanLine, alignmentCode);
-                
+
                 // Add alignment control character only to the first line
                 if (wrapped.length > 0 && alignmentCode) {
                     wrapped[0] = alignmentCode + wrapped[0];
                 }
-                
+
                 allWrappedLines.push(...wrapped);
             }
         }
