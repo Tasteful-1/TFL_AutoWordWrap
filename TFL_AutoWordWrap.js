@@ -70,13 +70,13 @@
  * @text 다음 줄과 병합
  * @desc 줄바꿈된 텍스트를 다음 줄 내용과 병합
  * @type boolean
- * @default true
+ * @default false
  *
  * @param chainWrapping
  * @text 연쇄 줄바꿈
  * @desc 병합된 줄이 또 넘칠 때 계속 줄바꿈 처리
  * @type boolean
- * @default true
+ * @default false
  *
  * @param preserveEmptyLines
  * @text 빈 줄 보존
@@ -340,3 +340,4 @@
 
 
 })();
+
