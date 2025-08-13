@@ -34,13 +34,13 @@
  * @text Merge with Next Line
  * @desc Merge wrapped text with existing next line content
  * @type boolean
- * @default true
+ * @default false
  *
  * @param chainWrapping
  * @text Chain Wrapping
  * @desc Continue wrapping when merged line also exceeds width
  * @type boolean
- * @default true
+ * @default false
  *
  * @param preserveEmptyLines
  * @text Preserve Empty Lines
@@ -337,5 +337,6 @@
 
         return Math.max(baseWidth * 0.95, 200);
     };
+
 
 })();
